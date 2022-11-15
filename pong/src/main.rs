@@ -1,19 +1,10 @@
 use ball::{BallCollider, BallPlugin};
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
+use player::{PlayerPlugin, PlayerCollider, PLAYERS_SPEED, Player2, Player1};
 
 mod ball;
-
-const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
-const PLAYERS_SPEED: f32 = 5.0;
-const PLAYER_WIDTH: f32 = 10.0;
-const PLAYER_HEIGHT: f32 = 120.0;
-
-#[derive(Component)]
-struct Player1;
-
-#[derive(Component)]
-struct Player2;
+mod player;
 
 #[derive(Component)]
 struct Velocity {
@@ -21,11 +12,6 @@ struct Velocity {
     speed: f32,
 }
 
-#[derive(Component)]
-struct PlayerCollider {
-    width: f32,
-    height: f32,
-}
 
 #[derive(Component)]
 struct Score {
@@ -51,48 +37,6 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn setup_players(mut commands: Commands, windows: Res<Windows>) {
-    let window = windows.get_primary().unwrap();
-
-    let first_player_x = -window.width() / 2. + PLAYER_FROM_EDGE_MARGIN;
-    let second_player_x = window.width() / 2. - PLAYER_FROM_EDGE_MARGIN;
-
-    let starting_y = 0.;
-
-    commands.spawn((
-        Player1,
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.8, 0.8, 1.0),
-                custom_size: Some(Vec2::new(PLAYER_WIDTH, PLAYER_HEIGHT)),
-                ..default()
-            },
-            transform: Transform::from_translation(Vec3::new(first_player_x, starting_y, 0.0)),
-            ..default()
-        },
-        PlayerCollider {
-            width: PLAYER_WIDTH,
-            height: PLAYER_HEIGHT,
-        },
-    ));
-
-    commands.spawn((
-        Player2,
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.8, 0.8, 1.0),
-                custom_size: Some(Vec2::new(PLAYER_WIDTH, PLAYER_HEIGHT)),
-                ..default()
-            },
-            transform: Transform::from_translation(Vec3::new(second_player_x, starting_y, 0.0)),
-            ..default()
-        },
-        PlayerCollider {
-            width: PLAYER_WIDTH,
-            height: PLAYER_HEIGHT,
-        },
-    ));
-}
 
 fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
@@ -224,10 +168,10 @@ fn main() {
             ..default()
         }))
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_players)
         .add_startup_system(first_player_input)
         .add_startup_system(second_player_input)
         .add_plugin(BallPlugin)
+        .add_plugin(PlayerPlugin)
         .add_plugin(InputManagerPlugin::<Player1State>::default())
         .add_plugin(InputManagerPlugin::<Player2State>::default())
         .add_system(first_player_input_system)
