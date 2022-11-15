@@ -1321,13 +1321,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "first_look"
-version = "0.1.0"
-dependencies = [
- "bevy",
-]
-
-[[package]]
 name = "fixedbitset"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

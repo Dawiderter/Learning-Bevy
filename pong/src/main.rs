@@ -2,9 +2,9 @@ use bevy::prelude::*;
 
 const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
 const PLAYERS_SPEED: f32 = 5.0;
-const PLAYER_WIDTH: f32 = 50.0;
+const PLAYER_WIDTH: f32 = 10.0;
 const PLAYER_HEIGHT: f32 = 120.0;
-const BALL_DIAMETER: f32 = 40.0;
+const BALL_DIAMETER: f32 = 10.0;
 const BALL_SPEED: f32 = 5.0;
 
 #[derive(Component)]
@@ -14,7 +14,9 @@ struct Player1;
 struct Player2;
 
 #[derive(Component)]
-struct Ball;
+struct Ball {
+    active: bool
+}
 
 #[derive(Component)]
 struct Velocity {
@@ -32,6 +34,15 @@ struct PlayerCollider {
 struct BallCollider {
     radius: f32,
 }
+
+#[derive(Component)]
+struct Score {
+    player1_score: i32,
+    player2_score: i32,
+}
+
+#[derive(Component)]
+struct ScoreText;
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -82,7 +93,7 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
 
 fn setup_ball(mut commands: Commands) {
     commands.spawn((
-        Ball,
+        Ball { active: true },
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(0.8, 0.8, 1.0),
@@ -100,6 +111,54 @@ fn setup_ball(mut commands: Commands) {
             speed: BALL_SPEED,
         },
     ));
+}
+
+fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        ScoreText,
+        TextBundle::from_section(
+            "0 - 0",
+            TextStyle {
+                font: asset_server.load("fonts/FiraCode-Regular.ttf"),
+                font_size: 20.0,
+                color: Color::WHITE,
+            },
+        ).with_text_alignment(TextAlignment::TOP_CENTER),
+    ));
+
+    commands.spawn(Score {
+        player1_score: 0,
+        player2_score: 0,
+    });
+}
+
+fn update_score_ui(mut text_query: Query<&mut Text, With<ScoreText>>, score_query: Query<&Score>) {
+    let score = score_query.get_single().unwrap();
+    for mut text in text_query.iter_mut() {
+        text.sections[0].value = format!("{} - {}", score.player1_score, score.player2_score);
+    }
+}
+
+fn check_for_ball_score(
+    mut score_query: Query<&mut Score>,
+    mut ball_query: Query<(&Transform, &mut Ball)>,
+    windows: Res<Windows>,
+) {
+    let window = windows.get_primary().unwrap();
+
+    let mut score = score_query.get_single_mut().unwrap();
+    for (ball_trans, mut ball) in ball_query.iter_mut() {
+        if ball.active {
+            if ball_trans.translation.x > window.width() / 2. {
+                score.player1_score += 1;
+                ball.active = false;
+            } else if ball_trans.translation.x < -window.width() / 2. {
+                score.player2_score += 1;
+                ball.active = false;
+            }
+        }
+        
+    }
 }
 
 fn first_player_system(keys: Res<Input<KeyCode>>, mut query: Query<&mut Transform, With<Player1>>) {
@@ -161,10 +220,11 @@ fn ball_player_collider_system(
     }
 }
 
-fn ball_reset_system(keys: Res<Input<KeyCode>>, mut query: Query<&mut Transform, With<Ball>>) {
+fn ball_reset_system(keys: Res<Input<KeyCode>>, mut query: Query<(&mut Transform, &mut Ball)>) {
     if keys.just_pressed(KeyCode::R) {
-        for mut transform in query.iter_mut() {
+        for (mut transform, mut ball) in query.iter_mut() {
             transform.translation = Vec3::new(0., 0., 0.);
+            ball.active = true;
         }
     }
 }
@@ -198,7 +258,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
-                width: 800.0,
+                width: 1200.0,
                 height: 600.0,
                 ..default()
             },
@@ -213,5 +273,8 @@ fn main() {
         .add_system(ball_wall_collider_system.label("Collider"))
         .add_system(ball_player_collider_system.label("Collider"))
         .add_system(ball_reset_system)
+        .add_startup_system(setup_ui)
+        .add_system(check_for_ball_score)
+        .add_system(update_score_ui)
         .run();
 }
