@@ -1,0 +1,6 @@
+[workspace]
+members = ["first_look", "pong"]
+resolver = "2"
+
+[workspace.dependencies]
+bevy = "0.9.0"
