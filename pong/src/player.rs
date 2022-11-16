@@ -1,17 +1,13 @@
 use bevy::prelude::*;
+use leafwing_input_manager::prelude::*;
 
-const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
-pub const PLAYERS_SPEED: f32 = 5.0;
+const PLAYERS_SPEED: f32 = 5.0;
 const PLAYER_WIDTH: f32 = 10.0;
 const PLAYER_HEIGHT: f32 = 120.0;
-
 pub struct PlayerPlugin;
 
 #[derive(Component)]
-pub struct Player1;
-
-#[derive(Component)]
-pub struct Player2;
+struct Player;
 
 #[derive(Component)]
 pub struct PlayerCollider {
@@ -19,51 +15,78 @@ pub struct PlayerCollider {
     pub height: f32,
 }
 
-fn setup_players(mut commands: Commands, windows: Res<Windows>) {
-    let window = windows.get_primary().unwrap();
+#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
+pub enum PlayerInput {
+    Up,
+    Down,
+}
 
-    let first_player_x = -window.width() / 2. + PLAYER_FROM_EDGE_MARGIN;
-    let second_player_x = window.width() / 2. - PLAYER_FROM_EDGE_MARGIN;
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    player: Player,
+    pub sprite_bundle: SpriteBundle,
+    pub player_collider: PlayerCollider,
+    pub input_manager_bundle: InputManagerBundle<PlayerInput>,
+}
 
-    let starting_y = 0.;
+impl PlayerBundle {
+    pub fn with_start_pos(mut self, pos: Vec2) -> Self {
+        self.sprite_bundle.transform.translation = pos.extend(0.);
+        self
+    }
+    pub fn with_keys(mut self, up_key: KeyCode, down_key: KeyCode) -> Self {
+        self.input_manager_bundle
+            .input_map
+            .insert(up_key, PlayerInput::Up)
+            .insert(down_key, PlayerInput::Down);
+        self
+    }
+}
 
-    commands.spawn((
-        Player1,
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.8, 0.8, 1.0),
-                custom_size: Some(Vec2::new(PLAYER_WIDTH, PLAYER_HEIGHT)),
+impl Default for PlayerBundle {
+    fn default() -> Self {
+        Self {
+            player: Player,
+            sprite_bundle: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb(0.8, 0.8, 1.0),
+                    custom_size: Some(Vec2::new(PLAYER_WIDTH, PLAYER_HEIGHT)),
+                    ..default()
+                },
+                transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
                 ..default()
             },
-            transform: Transform::from_translation(Vec3::new(first_player_x, starting_y, 0.0)),
-            ..default()
-        },
-        PlayerCollider {
-            width: PLAYER_WIDTH,
-            height: PLAYER_HEIGHT,
-        },
-    ));
-
-    commands.spawn((
-        Player2,
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.8, 0.8, 1.0),
-                custom_size: Some(Vec2::new(PLAYER_WIDTH, PLAYER_HEIGHT)),
-                ..default()
+            player_collider: PlayerCollider {
+                width: PLAYER_WIDTH,
+                height: PLAYER_HEIGHT,
             },
-            transform: Transform::from_translation(Vec3::new(second_player_x, starting_y, 0.0)),
-            ..default()
-        },
-        PlayerCollider {
-            width: PLAYER_WIDTH,
-            height: PLAYER_HEIGHT,
-        },
-    ));
+            input_manager_bundle: InputManagerBundle::<PlayerInput> {
+                action_state: ActionState::default(),
+                input_map: InputMap::default(),
+            },
+        }
+    }
+}
+
+fn player_input_system(
+    mut query: Query<(&mut Transform, &ActionState<PlayerInput>), With<Player>>,
+) {
+    for (mut transform, action_state) in query.iter_mut() {
+        let mut direction = Vec3::new(0.0, 0.0, 0.0);
+
+        if action_state.pressed(PlayerInput::Up) {
+            direction = Vec3::new(0.0, 1.0, 0.0);
+        } else if action_state.pressed(PlayerInput::Down) {
+            direction = Vec3::new(0.0, -1.0, 0.0);
+        }
+
+        transform.translation += direction * PLAYERS_SPEED;
+    }
 }
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_players);
+        app.add_plugin(InputManagerPlugin::<PlayerInput>::default())
+            .add_system(player_input_system);
     }
 }

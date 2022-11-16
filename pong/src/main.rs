@@ -1,11 +1,17 @@
-use bevy::prelude::*;
 use ball::{BallCollider, BallPlugin};
-use player::{PlayerCollider, PlayerPlugin};
-use player_input::{Player1InputPlugin, Player2InputPlugin};
+use bevy::prelude::*;
+use player::{PlayerBundle, PlayerCollider, PlayerPlugin};
 
 mod ball;
 mod player;
-mod player_input;
+
+const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
+
+#[derive(Component)]
+struct Player1;
+
+#[derive(Component)]
+struct Player2;
 
 #[derive(Component)]
 struct Velocity {
@@ -87,6 +93,29 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
     }
 }
 
+fn setup_players(mut commands: Commands, windows: Res<Windows>) {
+    let window = windows.get_primary().unwrap();
+
+    let first_player_x = -window.width() / 2. + PLAYER_FROM_EDGE_MARGIN;
+    let second_player_x = window.width() / 2. - PLAYER_FROM_EDGE_MARGIN;
+
+    let starting_y = 0.;
+
+    commands.spawn((
+        Player1,
+        PlayerBundle::default()
+            .with_start_pos(Vec2::new(first_player_x, starting_y))
+            .with_keys(KeyCode::W, KeyCode::S),
+    ));
+
+    commands.spawn((
+        Player2,
+        PlayerBundle::default()
+            .with_start_pos(Vec2::new(second_player_x, starting_y))
+            .with_keys(KeyCode::Up, KeyCode::Down),
+    ));
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -99,9 +128,8 @@ fn main() {
         }))
         .add_startup_system(setup_camera)
         .add_plugin(BallPlugin)
+        .add_startup_system(setup_players)
         .add_plugin(PlayerPlugin)
-        .add_plugin(Player1InputPlugin)
-        .add_plugin(Player2InputPlugin)
         .add_system(apply_velocity.before("Collider"))
         .add_system(ball_player_collider_system.label("Collider"))
         .add_startup_system(setup_ui)
