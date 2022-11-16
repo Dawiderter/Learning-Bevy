@@ -30,6 +30,11 @@ struct Score {
 #[derive(Component)]
 struct ScoreText;
 
+#[derive(Resource)]
+struct BallSound {
+    audio_handle : Handle<AudioSource>
+}
+
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
@@ -65,7 +70,7 @@ fn ball_player_collider_system(
     mut ball_query: Query<(&Transform, &mut Velocity, &BallCollider)>,
     player_query: Query<(&Transform, &PlayerCollider)>,
     audio: Res<Audio>,
-    server: Res<AssetServer>
+    ball_sound: Res<BallSound>
 ) {
     for (b_tr, mut b_vel, b_col) in ball_query.iter_mut() {
         for (p_tr, p_col) in player_query.iter() {
@@ -86,7 +91,7 @@ fn ball_player_collider_system(
                     direction: Vec2::new(b_vel.direction.x * -1., b_vel.direction.y),
                     ..*b_vel
                 };
-                audio.play(server.load("sounds/pong.mp3"));
+                audio.play(ball_sound.audio_handle.clone());
             }
         }
     }
@@ -121,6 +126,12 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>,) {
     ));
 }
 
+fn setup_assets(mut commands: Commands, server: Res<AssetServer>) {
+    commands.insert_resource(BallSound {
+        audio_handle: server.load("sounds/pong.mp3"),
+    })
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -133,6 +144,7 @@ fn main() {
         }))
         .add_startup_system(setup_camera)
         .add_startup_system(setup_players)
+        .add_startup_system(setup_assets)
         .add_plugin(BallPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(AudioPlugin)
