@@ -7,7 +7,15 @@ rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
 [workspace.dependencies]
 leafwing-input-manager = "0.7.0"
-bevy_kira_audio = "0.13.0"
+[workspace.dependencies.bevy_kira_audio]
+version = "0.13.0"
+default-features = false
+features = [
+  "wav",
+  "flac",
+  "mp3",
+  "ogg",
+]
 [workspace.dependencies.bevy]
 version = "0.9.0"
 default-features = false
@@ -50,7 +58,4 @@ features = [
   "tga",
   "basis-universal",
   "zstd", # needed if using zstd in KTX2 files
-  "flac",
-  "mp3",
-  "wav",
 ]

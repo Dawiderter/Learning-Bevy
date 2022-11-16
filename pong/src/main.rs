@@ -1,5 +1,7 @@
 use ball::{BallCollider, BallPlugin};
 use bevy::prelude::*;
+use bevy_kira_audio::prelude::Audio;
+use bevy_kira_audio::prelude::*;
 use player::{PlayerBundle, PlayerCollider, PlayerPlugin};
 
 mod ball;
@@ -62,6 +64,8 @@ fn update_score_ui(mut text_query: Query<&mut Text, With<ScoreText>>, score_quer
 fn ball_player_collider_system(
     mut ball_query: Query<(&Transform, &mut Velocity, &BallCollider)>,
     player_query: Query<(&Transform, &PlayerCollider)>,
+    audio: Res<Audio>,
+    server: Res<AssetServer>
 ) {
     for (b_tr, mut b_vel, b_col) in ball_query.iter_mut() {
         for (p_tr, p_col) in player_query.iter() {
@@ -81,7 +85,8 @@ fn ball_player_collider_system(
                 *b_vel = Velocity {
                     direction: Vec2::new(b_vel.direction.x * -1., b_vel.direction.y),
                     ..*b_vel
-                }
+                };
+                audio.play(server.load("sounds/pong.mp3"));
             }
         }
     }
@@ -93,7 +98,7 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
     }
 }
 
-fn setup_players(mut commands: Commands, windows: Res<Windows>) {
+fn setup_players(mut commands: Commands, windows: Res<Windows>,) {
     let window = windows.get_primary().unwrap();
 
     let first_player_x = -window.width() / 2. + PLAYER_FROM_EDGE_MARGIN;
@@ -127,9 +132,10 @@ fn main() {
             ..default()
         }))
         .add_startup_system(setup_camera)
-        .add_plugin(BallPlugin)
         .add_startup_system(setup_players)
+        .add_plugin(BallPlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(AudioPlugin)
         .add_system(apply_velocity.before("Collider"))
         .add_system(ball_player_collider_system.label("Collider"))
         .add_startup_system(setup_ui)
