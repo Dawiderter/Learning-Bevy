@@ -3,7 +3,7 @@ use leafwing_input_manager::prelude::*;
 
 use crate::{GameState, collisions::PlayerCollider};
 
-const PLAYERS_SPEED: f32 = 5.0;
+const PLAYERS_SPEED: f32 = 10.0;
 const PLAYER_WIDTH: f32 = 10.0;
 const PLAYER_HEIGHT: f32 = 120.0;
 pub struct PlayerPlugin;

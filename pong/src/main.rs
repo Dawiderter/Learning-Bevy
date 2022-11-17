@@ -114,7 +114,6 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
             .with_keys(KeyCode::W, KeyCode::S),
     ));
 
-    
     commands.spawn((
         Player1,
         PlayerBundle::default()
@@ -135,7 +134,6 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
             .with_start_pos(Vec2::new(second_player_x/2., starting_y))
             .with_keys(KeyCode::U, KeyCode::J),
     ));
-
 }
 
 fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCode>>) {

@@ -60,9 +60,16 @@ fn ball_wall_collider_system(
         let b_bot_left = b_tr.transform_point(Vec3::new(-b_col.radius, -b_col.radius, 0.0));
         let b_top_right = b_tr.transform_point(Vec3::new(b_col.radius, b_col.radius, 0.0));
 
-        if b_top_right.y > window.height() / 2. || b_bot_left.y < -window.height() / 2. {
+        if b_bot_left.y < -window.height() / 2. { // CHECK IF HIT SILING
             *b_vel = Velocity {
-                direction: Vec2::new(b_vel.direction.x, b_vel.direction.y * -1.),
+                direction: Vec2::new(b_vel.direction.x, b_vel.direction.y.abs()),
+                ..*b_vel
+            }
+        }
+
+        if  b_top_right.y > window.height() / 2. { // CHECK IF HIT FLOOR
+            *b_vel = Velocity {
+                direction: Vec2::new(b_vel.direction.x, -b_vel.direction.y.abs()),
                 ..*b_vel
             }
         }
