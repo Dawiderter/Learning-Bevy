@@ -42,7 +42,7 @@ fn ball_player_collider_system(
             {
                 *b_vel = Velocity {
                     direction: Vec2::new(b_vel.direction.x * -1., b_vel.direction.y),
-                    ..*b_vel
+                    speed: b_vel.speed * 1.1
                 };
                 audio.play(ball_sound.audio_handle.clone());
             }

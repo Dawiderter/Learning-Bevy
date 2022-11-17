@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{collisions::BallCollider, GameState, Score, Velocity};
 
 const BALL_DIAMETER: f32 = 10.0;
-const BALL_SPEED: f32 = 5.0;
+const BALL_SPEED: f32 = 500.0;
 
 pub struct BallPlugin;
 
@@ -55,11 +55,12 @@ fn check_for_ball_score(
     }
 }
 
-fn ball_reset_system(keys: Res<Input<KeyCode>>, mut query: Query<(&mut Transform, &mut Ball)>) {
+fn ball_reset_system(keys: Res<Input<KeyCode>>, mut query: Query<(&mut Transform, &mut Ball, &mut Velocity)>) {
     if keys.just_pressed(KeyCode::R) {
-        for (mut transform, mut ball) in query.iter_mut() {
+        for (mut transform, mut ball, mut vel) in query.iter_mut() {
             transform.translation = Vec3::new(0., 0., 0.);
             ball.active = true;
+            vel.speed = BALL_SPEED;
         }
     }
 }

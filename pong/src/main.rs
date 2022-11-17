@@ -93,9 +93,9 @@ fn update_score_ui(mut text_query: Query<&mut Text, With<ScoreText>>, score_quer
     }
 }
 
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
+fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
     for (mut transform, velocity) in query.iter_mut() {
-        transform.translation += velocity.direction.extend(0.0) * velocity.speed;
+        transform.translation += velocity.direction.extend(0.0) * velocity.speed * time.delta_seconds();
     }
 }
 
@@ -114,12 +114,28 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
             .with_keys(KeyCode::W, KeyCode::S),
     ));
 
+    
+    commands.spawn((
+        Player1,
+        PlayerBundle::default()
+            .with_start_pos(Vec2::new(first_player_x/2., starting_y))
+            .with_keys(KeyCode::E, KeyCode::D),
+    ));
+
     commands.spawn((
         Player2,
         PlayerBundle::default()
             .with_start_pos(Vec2::new(second_player_x, starting_y))
-            .with_keys(KeyCode::Up, KeyCode::Down),
+            .with_keys(KeyCode::I, KeyCode::K),
     ));
+
+    commands.spawn((
+        Player2,
+        PlayerBundle::default()
+            .with_start_pos(Vec2::new(second_player_x/2., starting_y))
+            .with_keys(KeyCode::U, KeyCode::J),
+    ));
+
 }
 
 fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCode>>) {
