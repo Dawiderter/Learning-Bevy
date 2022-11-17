@@ -7,7 +7,7 @@ use crate::{
     GameState,
 };
 
-const PLAYERS_SPEED: f32 = 5.0;
+const PLAYERS_SPEED: f32 = 500.0;
 const PLAYER_WIDTH: f32 = 10.0;
 const PLAYER_HEIGHT: f32 = 120.0;
 pub struct PlayerPlugin;
@@ -74,7 +74,7 @@ impl Default for PlayerBundle {
     }
 }
 
-fn player_movement_system(mut query: Query<(&mut Transform, &mut ActionState<PlayerInput>)>) {
+fn player_movement_system(mut query: Query<(&mut Transform, &mut ActionState<PlayerInput>)>, time : Res<Time>) {
     for (mut transform, action_state) in query.iter_mut() {
         let mut direction = Vec3::new(0.0, 0.0, 0.0);
 
@@ -84,7 +84,7 @@ fn player_movement_system(mut query: Query<(&mut Transform, &mut ActionState<Pla
             direction = Vec3::new(0.0, -1.0, 0.0);
         }
 
-        transform.translation += direction * PLAYERS_SPEED;
+        transform.translation += direction * PLAYERS_SPEED * time.delta_seconds();
     }
 }
 
@@ -97,10 +97,8 @@ fn player_ai_system(
         let ball_num = balls.count();
 
         let balls = ball_query.iter();
-        dbg!(ball_num);
         if ball_num != 0 {
             let avg = balls.map(|transform| transform.translation.y).sum::<f32>() / ball_num as f32;
-            dbg!(avg);
             if ai_transform.translation.y > avg {
                 action_state.press(PlayerInput::Down);
             } else if ai_transform.translation.y < avg {
