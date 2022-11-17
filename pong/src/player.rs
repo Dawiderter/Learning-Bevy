@@ -1,7 +1,11 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
-use crate::{collisions::PlayerCollider, GameState};
+use crate::{
+    ball::{self, Ball},
+    collisions::PlayerCollider,
+    GameState,
+};
 
 const PLAYERS_SPEED: f32 = 5.0;
 const PLAYER_WIDTH: f32 = 10.0;
@@ -85,10 +89,24 @@ fn player_movement_system(mut query: Query<(&mut Transform, &mut ActionState<Pla
 }
 
 fn player_ai_system(
-    mut query: Query<(&Transform, &mut ActionState<PlayerInput>), With<AiInputComp>>,
+    mut ai_query: Query<(&Transform, &mut ActionState<PlayerInput>), With<AiInputComp>>,
+    ball_query: Query<&Transform, With<Ball>>,
 ) {
-    for (transform, mut action_state) in query.iter_mut() {
-        action_state.press(PlayerInput::Up);
+    for (ai_transform, mut action_state) in ai_query.iter_mut() {
+        let balls = ball_query.iter();
+        let ball_num = balls.count();
+
+        let balls = ball_query.iter();
+        dbg!(ball_num);
+        if ball_num != 0 {
+            let avg = balls.map(|transform| transform.translation.y).sum::<f32>() / ball_num as f32;
+            dbg!(avg);
+            if ai_transform.translation.y > avg {
+                action_state.press(PlayerInput::Down);
+            } else if ai_transform.translation.y < avg {
+                action_state.press(PlayerInput::Up);
+            }
+        }
     }
 }
 
@@ -97,8 +115,13 @@ impl Plugin for PlayerPlugin {
         app.add_plugin(InputManagerPlugin::<PlayerInput>::default())
             .add_system_set(
                 SystemSet::on_update(GameState::InGame)
+                    .with_system(player_ai_system)
+                    .before("pm")
+            )
+            .add_system_set(
+                SystemSet::on_update(GameState::InGame)
                     .with_system(player_movement_system)
-                    .with_system(player_ai_system),
+                    .label("pm"),
             );
     }
 }
