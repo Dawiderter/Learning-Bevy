@@ -118,7 +118,6 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
         AiInputComp,
         PlayerBundle::default()
             .with_start_pos(Vec2::new(first_player_x, starting_y))
-            .with_keys(KeyCode::W, KeyCode::S),
     ));
 
     commands.spawn((
