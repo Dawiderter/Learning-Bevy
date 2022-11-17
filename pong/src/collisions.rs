@@ -79,8 +79,9 @@ impl Plugin for CollisionPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_update(GameState::InGame)
-                .with_system(ball_wall_collider_system.label(CollisionPhase))
-                .with_system(ball_player_collider_system.label(CollisionPhase)),
+                .with_system(ball_wall_collider_system)
+                .with_system(ball_player_collider_system)
+                .label(CollisionPhase),
         )
         .add_system_set(SystemSet::on_enter(GameState::InGame).with_system(setup_assets));
     }
