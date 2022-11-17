@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
-use crate::{GameState, collisions::PlayerCollider};
+use crate::{collisions::PlayerCollider, GameState};
 
 const PLAYERS_SPEED: f32 = 5.0;
 const PLAYER_WIDTH: f32 = 10.0;
@@ -17,9 +17,19 @@ pub enum PlayerInput {
     Down,
 }
 
+#[derive(Component)]
+pub struct Velocity(Vec3);
+
+#[derive(Component)]
+pub struct PlayerInputComp;
+
+#[derive(Component)]
+pub struct AiInputComp;
+
 #[derive(Bundle)]
 pub struct PlayerBundle {
     player: Player,
+    pub velocity: Velocity,
     pub sprite_bundle: SpriteBundle,
     pub player_collider: PlayerCollider,
     pub input_manager_bundle: InputManagerBundle<PlayerInput>,
@@ -43,6 +53,7 @@ impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
             player: Player,
+            velocity: Velocity(Vec3::new(0.0, 0.0, 0.0)),
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgb(0.8, 0.8, 1.0),
@@ -64,10 +75,16 @@ impl Default for PlayerBundle {
     }
 }
 
+fn player_movement_system(mut query: Query<(&mut Transform, &Velocity)>) {
+    for (mut transform, velocity) in query.iter_mut() {
+        transform.translation += velocity.0 * PLAYERS_SPEED;
+    }
+}
+
 fn player_input_system(
-    mut query: Query<(&mut Transform, &ActionState<PlayerInput>), With<Player>>,
+    mut query: Query<(&mut Velocity, &ActionState<PlayerInput>), With<PlayerInputComp>>,
 ) {
-    for (mut transform, action_state) in query.iter_mut() {
+    for (mut velocity, action_state) in query.iter_mut() {
         let mut direction = Vec3::new(0.0, 0.0, 0.0);
 
         if action_state.pressed(PlayerInput::Up) {
@@ -76,13 +93,27 @@ fn player_input_system(
             direction = Vec3::new(0.0, -1.0, 0.0);
         }
 
-        transform.translation += direction * PLAYERS_SPEED;
+        velocity.0 = direction;
+    }
+}
+
+fn player_ai_system(
+    mut query: Query<(&mut Velocity, &ActionState<PlayerInput>), With<AiInputComp>>,
+) {
+    for (mut velocity, action_state) in query.iter_mut() {
+        let mut direction = Vec3::new(0.0, 1.0, 0.0);
+        velocity.0 = direction;
     }
 }
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<PlayerInput>::default())
-            .add_system_set(SystemSet::on_update(GameState::InGame).with_system(player_input_system));
+            .add_system_set(
+                SystemSet::on_update(GameState::InGame)
+                    .with_system(player_input_system)
+                    .with_system(player_movement_system)
+                    .with_system(player_ai_system),
+            );
     }
 }

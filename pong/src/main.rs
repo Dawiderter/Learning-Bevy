@@ -3,8 +3,8 @@ use ball::BallPlugin;
 //use bevy::{ecs::schedule::ShouldRun, time::FixedTimestep};
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
-use collisions::{CollisionPhase, CollisionPlugin};
-use player::{PlayerBundle, PlayerPlugin};
+use collisions::{CollisionPlugin, CollisionPhase};
+use player::{PlayerBundle, PlayerPlugin, PlayerInputComp, AiInputComp};
 
 mod ball;
 mod collisions;
@@ -12,14 +12,6 @@ mod player;
 
 const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
 
-//Fixed Timestep
-//const TIME_STEP: f32 = 1. / 240.;
-
-#[derive(Component)]
-struct Player1;
-
-#[derive(Component)]
-struct Player2;
 
 #[derive(Component)]
 struct Velocity {
@@ -123,28 +115,28 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
     let starting_y = 0.;
 
     commands.spawn((
-        Player1,
+        AiInputComp,
         PlayerBundle::default()
             .with_start_pos(Vec2::new(first_player_x, starting_y))
             .with_keys(KeyCode::W, KeyCode::S),
     ));
 
     commands.spawn((
-        Player1,
+        PlayerInputComp,
         PlayerBundle::default()
             .with_start_pos(Vec2::new(first_player_x / 2., starting_y))
             .with_keys(KeyCode::E, KeyCode::D),
     ));
 
     commands.spawn((
-        Player2,
+        PlayerInputComp,
         PlayerBundle::default()
             .with_start_pos(Vec2::new(second_player_x, starting_y))
             .with_keys(KeyCode::I, KeyCode::K),
     ));
 
     commands.spawn((
-        Player2,
+        PlayerInputComp,
         PlayerBundle::default()
             .with_start_pos(Vec2::new(second_player_x / 2., starting_y))
             .with_keys(KeyCode::U, KeyCode::J),
