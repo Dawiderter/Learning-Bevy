@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{Score, Velocity};
+use crate::{collisions::BallCollider, GameState, Score, Velocity};
 
 const BALL_DIAMETER: f32 = 10.0;
 const BALL_SPEED: f32 = 5.0;
@@ -10,11 +10,6 @@ pub struct BallPlugin;
 #[derive(Component)]
 pub struct Ball {
     active: bool,
-}
-
-#[derive(Component)]
-pub struct BallCollider {
-    pub radius: f32,
 }
 
 fn setup_ball(mut commands: Commands) {
@@ -37,25 +32,6 @@ fn setup_ball(mut commands: Commands) {
             speed: BALL_SPEED,
         },
     ));
-}
-
-fn ball_wall_collider_system(
-    windows: Res<Windows>,
-    mut query: Query<(&Transform, &mut Velocity, &BallCollider)>,
-) {
-    let window = windows.get_primary().unwrap();
-
-    for (b_tr, mut b_vel, b_col) in query.iter_mut() {
-        let b_bot_left = b_tr.transform_point(Vec3::new(-b_col.radius, -b_col.radius, 0.0));
-        let b_top_right = b_tr.transform_point(Vec3::new(b_col.radius, b_col.radius, 0.0));
-
-        if b_top_right.y > window.height() / 2. || b_bot_left.y < -window.height() / 2. {
-            *b_vel = Velocity {
-                direction: Vec2::new(b_vel.direction.x, b_vel.direction.y * -1.),
-                ..*b_vel
-            }
-        }
-    }
 }
 
 fn check_for_ball_score(
@@ -91,8 +67,10 @@ fn ball_reset_system(keys: Res<Input<KeyCode>>, mut query: Query<(&mut Transform
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_ball)
-            .add_system(ball_wall_collider_system.label("Collider"))
-            .add_system(ball_reset_system)
-            .add_system(check_for_ball_score);
+            .add_system_set(
+                SystemSet::on_update(GameState::InGame)
+                    .with_system(ball_reset_system)
+                    .with_system(check_for_ball_score),
+            );
     }
 }

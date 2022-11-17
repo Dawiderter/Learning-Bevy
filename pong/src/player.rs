@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
+use crate::{GameState, collisions::PlayerCollider};
+
 const PLAYERS_SPEED: f32 = 5.0;
 const PLAYER_WIDTH: f32 = 10.0;
 const PLAYER_HEIGHT: f32 = 120.0;
@@ -8,12 +10,6 @@ pub struct PlayerPlugin;
 
 #[derive(Component)]
 struct Player;
-
-#[derive(Component)]
-pub struct PlayerCollider {
-    pub width: f32,
-    pub height: f32,
-}
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum PlayerInput {
@@ -87,6 +83,6 @@ fn player_input_system(
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<PlayerInput>::default())
-            .add_system(player_input_system);
+            .add_system_set(SystemSet::on_update(GameState::InGame).with_system(player_input_system));
     }
 }
