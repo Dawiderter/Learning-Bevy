@@ -3,20 +3,18 @@ use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use collisions::{CollisionPlugin, CollisionPhase, BallCollider};
 use gamefield::{GameFieldBundle, update_gamefield};
-use player::{PlayerBundle, PlayerPlugin};
+//Dla wersji FixedTimestep
+//use bevy::{ecs::schedule::ShouldRun, time::FixedTimestep};
+use player::{PlayerBundle, PlayerPlugin, PlayerInputComp, AiInputComp};
+
 
 mod ball;
-mod player;
 mod collisions;
 mod gamefield;
+mod player;
 
 const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
 
-#[derive(Component)]
-struct Player1;
-
-#[derive(Component)]
-struct Player2;
 
 #[derive(Component)]
 struct Velocity {
@@ -95,9 +93,19 @@ fn update_score_ui(mut text_query: Query<&mut Text, With<ScoreText>>, score_quer
     }
 }
 
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
+// Dla wersji wykonywanej stałą ilość razy w ciągu sekundy
+// fn apply_velocity_fixed(mut query: Query<(&mut Transform, &Velocity)>) {
+//     for (mut transform, velocity) in query.iter_mut() {
+//         transform.translation +=
+//             velocity.direction.extend(0.0) * velocity.speed * TIME_STEP;
+//     }
+// }
+
+
+fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time : Res<Time>) {
     for (mut transform, velocity) in query.iter_mut() {
-        transform.translation += velocity.direction.extend(0.0) * velocity.speed * time.delta_seconds();
+        transform.translation +=
+            velocity.direction.extend(0.0) * velocity.speed * time.delta_seconds();
     }
 }
 
@@ -110,28 +118,24 @@ fn setup_gamefield(mut commands: Commands, windows: Res<Windows>) {
     let starting_y = 0.;
 
     commands.spawn(GameFieldBundle::default()).with_children(|parent| { 
-        parent.spawn((
-            Player1,
+        parent.spawn(
             PlayerBundle::default()
                 .with_start_pos(Vec3::new(first_player_x, starting_y, 10.0))
-                .with_keys(KeyCode::W, KeyCode::S))); 
+                .with_keys(KeyCode::W, KeyCode::S)); 
 
         parent.spawn((
-            Player1,
             PlayerBundle::default()
                 .with_start_pos(Vec3::new(first_player_x/2., starting_y, 10.0))
                 .with_keys(KeyCode::E, KeyCode::D),
         ));
     
         parent.spawn((
-            Player2,
             PlayerBundle::default()
                 .with_start_pos(Vec3::new(second_player_x, starting_y, 10.0))
                 .with_keys(KeyCode::I, KeyCode::K),
         ));
     
         parent.spawn((
-            Player2,
             PlayerBundle::default()
                 .with_start_pos(Vec3::new(second_player_x/2., starting_y, 10.0))
                 .with_keys(KeyCode::U, KeyCode::J),
@@ -172,7 +176,7 @@ fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCod
             }
         };
     }
-} 
+}
 
 fn main() {
     App::new()
@@ -191,7 +195,24 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(AudioPlugin)
         .add_plugin(CollisionPlugin)
-        .add_system_set(SystemSet::on_update(GameState::InGame).with_system(apply_velocity.before(CollisionPhase)))
+        .add_system_set(
+            SystemSet::on_update(GameState::InGame)
+                .with_system(apply_velocity.before(CollisionPhase)),
+        )
+        // Dla wykonywania systemów stałą ilość razy w ciągu sekundy
+        // .add_system_set(
+        //     SystemSet::new()
+        //         .with_run_criteria(FixedTimestep::step(TIME_STEP as f64).pipe(
+        //             |In(input): In<ShouldRun>, state: Res<State<GameState>>| {
+        //                 if state.current() == &GameState::InGame {
+        //                     input
+        //                 } else {
+        //                     ShouldRun::No
+        //                 }
+        //             },
+        //         ))
+        //         .with_system(apply_velocity.before(CollisionPhase)),
+        // )
         .add_startup_system(setup_ui)
         .add_system(update_score_ui)
         .add_system(pause_system)
