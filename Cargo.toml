@@ -5,6 +5,14 @@ resolver = "2"
 [build]
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
 [workspace.dependencies]
 leafwing-input-manager = "0.7.0"
 [workspace.dependencies.bevy_kira_audio]
@@ -20,6 +28,7 @@ features = [
 version = "0.9.0"
 default-features = false
 features = [
+  "dynamic",            #DELETE THIS BEFORE RELESE, FASTER COMPILE
   # These are the default features:
   # (re-enable whichever you like)
 
@@ -46,7 +55,6 @@ features = [
   # (add any of these that you need)
 
   # Bevy functionality:
-  "wayland",              # Linux: Support Wayland windowing system
   "subpixel_glyph_atlas", # Subpixel antialiasing for text/fonts
   "serialize",            # Support for `serde` Serialize/Deserialize
 
