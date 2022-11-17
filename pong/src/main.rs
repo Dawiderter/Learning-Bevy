@@ -1,8 +1,8 @@
-use ball::BallPlugin;
+use ball::{BallPlugin, Ball, BALL_DIAMETER, BALL_SPEED};
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
-use collisions::{CollisionPlugin, CollisionPhase};
-use gamefield::GameField;
+use collisions::{CollisionPlugin, CollisionPhase, BallCollider};
+use gamefield::{GameFieldBundle, update_gamefield};
 use player::{PlayerBundle, PlayerPlugin};
 
 mod ball;
@@ -101,7 +101,7 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>
     }
 }
 
-fn setup_players(mut commands: Commands, windows: Res<Windows>) {
+fn setup_gamefield(mut commands: Commands, windows: Res<Windows>) {
     let window = windows.get_primary().unwrap();
 
     let first_player_x = -window.width() / 2. + PLAYER_FROM_EDGE_MARGIN;
@@ -109,33 +109,56 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
 
     let starting_y = 0.;
 
-    commands.spawn((
-        Player1,
-        PlayerBundle::default()
-            .with_start_pos(Vec2::new(first_player_x, starting_y))
-            .with_keys(KeyCode::W, KeyCode::S),
-    ));
+    commands.spawn(GameFieldBundle::default()).with_children(|parent| { 
+        parent.spawn((
+            Player1,
+            PlayerBundle::default()
+                .with_start_pos(Vec3::new(first_player_x, starting_y, 10.0))
+                .with_keys(KeyCode::W, KeyCode::S))); 
 
-    commands.spawn((
-        Player1,
-        PlayerBundle::default()
-            .with_start_pos(Vec2::new(first_player_x/2., starting_y))
-            .with_keys(KeyCode::E, KeyCode::D),
-    ));
+        parent.spawn((
+            Player1,
+            PlayerBundle::default()
+                .with_start_pos(Vec3::new(first_player_x/2., starting_y, 10.0))
+                .with_keys(KeyCode::E, KeyCode::D),
+        ));
+    
+        parent.spawn((
+            Player2,
+            PlayerBundle::default()
+                .with_start_pos(Vec3::new(second_player_x, starting_y, 10.0))
+                .with_keys(KeyCode::I, KeyCode::K),
+        ));
+    
+        parent.spawn((
+            Player2,
+            PlayerBundle::default()
+                .with_start_pos(Vec3::new(second_player_x/2., starting_y, 10.0))
+                .with_keys(KeyCode::U, KeyCode::J),
+        ));
 
-    commands.spawn((
-        Player2,
-        PlayerBundle::default()
-            .with_start_pos(Vec2::new(second_player_x, starting_y))
-            .with_keys(KeyCode::I, KeyCode::K),
-    ));
+        parent.spawn((
+            Ball { active: true },
+            SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb(0.8, 0.8, 1.0),
+                    custom_size: Some(Vec2::new(BALL_DIAMETER, BALL_DIAMETER)),
+                    ..default()
+                },
+                transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
+                ..default()
+            },
+            BallCollider {
+                radius: BALL_DIAMETER / 2.,
+            },
+            Velocity {
+                direction: Vec2::new(1.0, 1.0).normalize(),
+                speed: BALL_SPEED,
+            },
+        ));
 
-    commands.spawn((
-        Player2,
-        PlayerBundle::default()
-            .with_start_pos(Vec2::new(second_player_x/2., starting_y))
-            .with_keys(KeyCode::U, KeyCode::J),
-    ));
+        });
+
 }
 
 fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCode>>) {
@@ -151,22 +174,17 @@ fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCod
     }
 } 
 
-fn setup_gamefield(mut commands: Commands) {
-    commands.spawn(GameField::default());
-}
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
-                width: 1200.0,
-                height: 600.0,
+                width: 1600.0,
+                height: 900.0,
                 ..default()
             },
             ..default()
         }))
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_players)
         .add_startup_system(setup_gamefield)
         .add_state(GameState::InGame)
         .add_plugin(BallPlugin)
@@ -177,5 +195,6 @@ fn main() {
         .add_startup_system(setup_ui)
         .add_system(update_score_ui)
         .add_system(pause_system)
+        .add_system(update_gamefield)
         .run();
 }

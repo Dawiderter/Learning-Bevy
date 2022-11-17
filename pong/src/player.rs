@@ -26,8 +26,8 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    pub fn with_start_pos(mut self, pos: Vec2) -> Self {
-        self.sprite_bundle.transform.translation = pos.extend(0.);
+    pub fn with_start_pos(mut self, pos: Vec3) -> Self {
+        self.sprite_bundle.transform.translation = pos;
         self
     }
     pub fn with_keys(mut self, up_key: KeyCode, down_key: KeyCode) -> Self {

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 
-use crate::{BallSound, GameState, Velocity};
+use crate::{BallSound, GameState, Velocity, gamefield::{DEFAULT_WIDTH, DEFAULT_WIDTH_TO_HEIGHT}};
 
 #[derive(Component)]
 pub struct BallCollider {
@@ -51,23 +51,20 @@ fn ball_player_collider_system(
 }
 
 fn ball_wall_collider_system(
-    windows: Res<Windows>,
     mut query: Query<(&Transform, &mut Velocity, &BallCollider)>,
 ) {
-    let window = windows.get_primary().unwrap();
-
     for (b_tr, mut b_vel, b_col) in query.iter_mut() {
         let b_bot_left = b_tr.transform_point(Vec3::new(-b_col.radius, -b_col.radius, 0.0));
         let b_top_right = b_tr.transform_point(Vec3::new(b_col.radius, b_col.radius, 0.0));
 
-        if b_bot_left.y < -window.height() / 2. { // CHECK IF HIT SILING
+        if b_bot_left.y < -DEFAULT_WIDTH/DEFAULT_WIDTH_TO_HEIGHT / 2. { // CHECK IF HIT SILING
             *b_vel = Velocity {
                 direction: Vec2::new(b_vel.direction.x, b_vel.direction.y.abs()),
                 ..*b_vel
             }
         }
 
-        if  b_top_right.y > window.height() / 2. { // CHECK IF HIT FLOOR
+        if  b_top_right.y > DEFAULT_WIDTH/DEFAULT_WIDTH_TO_HEIGHT / 2. { // CHECK IF HIT FLOOR
             *b_vel = Velocity {
                 direction: Vec2::new(b_vel.direction.x, -b_vel.direction.y.abs()),
                 ..*b_vel
