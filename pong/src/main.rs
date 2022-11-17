@@ -2,11 +2,13 @@ use ball::BallPlugin;
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use collisions::{CollisionPlugin, CollisionPhase};
+use gamefield::GameField;
 use player::{PlayerBundle, PlayerPlugin};
 
 mod ball;
 mod player;
 mod collisions;
+mod gamefield;
 
 const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
 
@@ -149,6 +151,10 @@ fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCod
     }
 } 
 
+fn setup_gamefield(mut commands: Commands) {
+    commands.spawn(GameField::default());
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -161,6 +167,7 @@ fn main() {
         }))
         .add_startup_system(setup_camera)
         .add_startup_system(setup_players)
+        .add_startup_system(setup_gamefield)
         .add_state(GameState::InGame)
         .add_plugin(BallPlugin)
         .add_plugin(PlayerPlugin)
