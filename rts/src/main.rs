@@ -1,13 +1,54 @@
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use bevy_mod_picking::*;
+use leafwing_input_manager::prelude::*;
 
-fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(DefaultPickingPlugins)
-        .add_startup_system(setup)
-        .run();
+#[derive(Component)]
+struct PlayerCamera;
+
+#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
+enum Action {
+    Move,
+}
+
+const CAMERA_SPEED: f32 = 5.0;
+
+fn player_movement_system(
+    mut query: Query<(&mut Transform, &ActionState<Action>), With<PlayerCamera>>,
+    time: Res<Time>,
+) {
+    let (mut transform, action_state) = query.single_mut();
+    if action_state.pressed(Action::Move) {
+        let axis_pair = action_state.axis_pair(Action::Move).unwrap();
+        transform.translation +=
+            Vec3::new(axis_pair.x(), 0.0, -axis_pair.y()) * time.delta_seconds() * CAMERA_SPEED;
+    }
+}
+
+fn spawn_camera(mut commands: Commands) {
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 15.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..Default::default()
+        },
+        PickingCameraBundle::default(), // <- Sets the camera to use for picking.
+        PlayerCamera,
+        InputManagerBundle::<Action> {
+            // Stores "which actions are currently activated"
+            // Map some arbitrary keys into a virtual direction pad that triggers our move action
+            input_map: InputMap::new([(
+                VirtualDPad {
+                    up: KeyCode::W.into(),
+                    down: KeyCode::S.into(),
+                    left: KeyCode::A.into(),
+                    right: KeyCode::D.into(),
+                },
+                Action::Move,
+            )])
+            .build(),
+            ..default()
+        },
+    ));
 }
 
 /// set up a simple 3D scene
@@ -46,11 +87,16 @@ fn setup(
         ..default()
     });
     // camera
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..Default::default()
-        },
-        PickingCameraBundle::default(), // <- Sets the camera to use for picking.
-    ));
+}
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPickingPlugins)
+        .add_plugin(AudioPlugin)
+        .add_plugin(InputManagerPlugin::<Action>::default())
+        .add_startup_system(spawn_camera)
+        .add_system(player_movement_system)
+        .add_startup_system(setup)
+        .run();
 }
