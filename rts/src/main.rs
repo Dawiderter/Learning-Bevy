@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_egui::{egui::{self, Layout, Align, Ui, Button}, egui::panel::TopBottomSide, EguiContext, EguiPlugin};
 use bevy_kira_audio::prelude::*;
 use bevy_mod_picking::*;
 
@@ -6,12 +7,39 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
-        .add_startup_system(setup)
+        .add_plugin(EguiPlugin)
+        .add_startup_system(setup_cubes)
+        .add_system(ui_system)
         .run();
 }
 
+fn ui_system(mut egui_context: ResMut<EguiContext>) {
+    let ctx = egui_context.ctx_mut();
+
+    egui::TopBottomPanel::new(TopBottomSide::Bottom, "bottom_panel")
+        .min_height(100.)
+        .show(ctx, |ui| {
+            let width = ui.available_width();
+            let heigth = ui.available_height();
+            let buttons_num = 3;
+            let space = 100.;
+
+            let button_width = (width - (space * (buttons_num + 1) as f32))/space;
+
+            ui.with_layout(Layout::left_to_right(Align::Center).with_cross_justify(true), |ui| {
+                ui.add_space(space);
+                ui.add_sized([button_width, heigth], Button::new("Zasoby")); 
+                ui.add_space(space);
+                ui.add_sized([button_width, heigth], Button::new("Budynki")); 
+                ui.add_space(space);
+                ui.add_sized([button_width, heigth], Button::new("Jednostki")); 
+                ui.add_space(space);
+            });
+        }); 
+}
+
 /// set up a simple 3D scene
-fn setup(
+fn setup_cubes(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
