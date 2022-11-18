@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
 use crate::{
-    ball::{self, Ball},
+    ball::{Ball},
     collisions::PlayerCollider,
     GameState,
 };

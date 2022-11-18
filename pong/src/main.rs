@@ -1,17 +1,19 @@
 use ball::BallPlugin;
 //Dla wersji FixedTimestep
 //use bevy::{ecs::schedule::ShouldRun, time::FixedTimestep};
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+use bevy_egui::egui::{Frame, Pos2};
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 use bevy_kira_audio::prelude::*;
-use collisions::{CollisionPlugin, CollisionPhase};
-use player::{PlayerBundle, PlayerPlugin, PlayerInputComp, AiInputComp};
+use collisions::{CollisionPhase, CollisionPlugin};
+use player::{AiInputComp, PlayerBundle, PlayerInputComp, PlayerPlugin};
 
 mod ball;
 mod collisions;
 mod player;
 
 const PLAYER_FROM_EDGE_MARGIN: f32 = 40.;
-
 
 #[derive(Component)]
 struct Velocity {
@@ -98,8 +100,7 @@ fn update_score_ui(mut text_query: Query<&mut Text, With<ScoreText>>, score_quer
 //     }
 // }
 
-
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time : Res<Time>) {
+fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
     for (mut transform, velocity) in query.iter_mut() {
         transform.translation +=
             velocity.direction.extend(0.0) * velocity.speed * time.delta_seconds();
@@ -116,8 +117,7 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
 
     commands.spawn((
         AiInputComp,
-        PlayerBundle::default()
-            .with_start_pos(Vec2::new(first_player_x, starting_y))
+        PlayerBundle::default().with_start_pos(Vec2::new(first_player_x, starting_y)),
     ));
 
     commands.spawn((
@@ -143,7 +143,7 @@ fn setup_players(mut commands: Commands, windows: Res<Windows>) {
 }
 
 fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCode>>) {
-    if input.just_pressed(KeyCode::Escape) {
+    if input.just_pressed(KeyCode::P) {
         match app_state.current() {
             GameState::Paused => {
                 app_state.pop().unwrap();
@@ -153,6 +153,72 @@ fn pause_system(mut app_state: ResMut<State<GameState>>, input: Res<Input<KeyCod
             }
         };
     }
+}
+
+fn draw_pause_menu(
+    mut egui_context: ResMut<EguiContext>,
+    app_state: Res<State<GameState>>,
+    windows: Res<Windows>,
+) {
+    if app_state.current() != &GameState::Paused {
+        return;
+    }
+    use egui::*;
+    let ctx = egui_context.ctx_mut();
+    let text_color = ctx.style().visuals.text_color();
+
+    let height = 28.0;
+    egui::CentralPanel::default()
+        .frame(Frame::none())
+        .show(ctx, |ui| {
+            let rect = ui.max_rect();
+            let painter = ui.painter();
+
+            // Paint the frame:
+            painter.rect(
+                rect.shrink(1.0),
+                10.0,
+                ctx.style().visuals.window_fill(),
+                Stroke::new(1.0, text_color),
+            );
+
+            // Paint the title:
+            painter.text(
+                rect.center_top() + vec2(0.0, height / 2.0),
+                Align2::CENTER_CENTER,
+                "Title",
+                FontId::proportional(height * 0.8),
+                text_color,
+            );
+
+            // Paint the line under the title:
+            painter.line_segment(
+                [
+                    rect.left_top() + vec2(2.0, height),
+                    rect.right_top() + vec2(-2.0, height),
+                ],
+                Stroke::new(1.0, text_color),
+            );
+
+            // Add the close button:
+            let close_response = ui.put(
+                Rect::from_min_size(rect.left_top(), Vec2::splat(height)),
+                Button::new(RichText::new("❌").size(height - 4.0)).frame(false),
+            );
+            if close_response.clicked() {}
+
+            // Interact with the title bar (drag to move window):
+            let title_bar_rect = {
+                let mut rect = rect;
+                rect.max.y = rect.min.y + height;
+                rect
+            };
+            let title_bar_response =
+                ui.interact(title_bar_rect, Id::new("title_bar"), Sense::click());
+            if title_bar_response.is_pointer_button_down_on() {}
+
+            // Add the contents:
+        });
 }
 
 fn main() {
@@ -168,6 +234,7 @@ fn main() {
         .add_startup_system(setup_camera)
         .add_startup_system(setup_players)
         .add_state(GameState::InGame)
+        .add_plugin(EguiPlugin)
         .add_plugin(BallPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(AudioPlugin)
@@ -191,7 +258,10 @@ fn main() {
         //         .with_system(apply_velocity.before(CollisionPhase)),
         // )
         .add_startup_system(setup_ui)
-        .add_system(update_score_ui)
         .add_system(pause_system)
+        .add_system(update_score_ui)
+        .add_system(draw_pause_menu)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .run();
 }

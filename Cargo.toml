@@ -1,5 +1,5 @@
 [workspace]
-members = ["pong", "puzzle"]
+members = ["pong", "puzzle", "rts"]
 resolver = "2"
 
 # Enable a small amount of optimization in debug mode
@@ -11,6 +11,7 @@ opt-level = 1
 opt-level = 3
 
 [workspace.dependencies]
+bevy_egui = "0.17"
 leafwing-input-manager = "0.7.0"
 [workspace.dependencies.bevy_kira_audio]
 version = "0.13.0"
