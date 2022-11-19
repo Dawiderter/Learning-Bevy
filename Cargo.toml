@@ -45,6 +45,7 @@ features = [
   "bevy_sprite",        # 2D (sprites) rendering
   "bevy_text",          # Text/font rendering
   "bevy_ui",            # UI toolkit
+  "bevy_scene",          # Obsługa scen (do wczytywania gltf)
 
   # File formats:
   "png",
@@ -64,4 +65,6 @@ features = [
   "tga",
   "basis-universal",
   "zstd", # needed if using zstd in KTX2 files
+
+  "bevy_gltf",           # Wczytywanie modeli gltf
 ]
