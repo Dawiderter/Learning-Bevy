@@ -39,6 +39,12 @@ fn setup_cubes(
     // camera
 }
 
+use board::BoardPlugin;
+mod board;
+
+use unit::UnitPlugin;
+mod unit;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -46,6 +52,7 @@ fn main() {
         .add_plugin(AudioPlugin)
         .add_plugin(CameraPlugin)
         .add_plugin(UiPlugin)
-        .add_startup_system(setup_cubes)
+        .add_plugin(BoardPlugin)
+        .add_plugin(UnitPlugin)
         .run();
 }
